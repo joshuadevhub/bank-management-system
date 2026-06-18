@@ -1,0 +1,49 @@
+[
+  {
+    "id": "ID-1781084824183-507",
+    "accountNumber": "8435164079",
+    "accountPin": "$2b$10$sYHuL.BseG.sXviOZAx3rOD7hHlo4VxbTGd8wSob4FCoZM5doS9gG",
+    "accountType": "Savings",
+    "balance": 988,
+    "email": "jelemidea@byupathway.edu",
+    "failedAttempt": 0,
+    "history": [
+      {
+        "type": "Deposit",
+        "amount": 1258,
+        "date": "2026-06-18T17:15:26.341Z"
+      },
+      {
+        "type": "Withdraw",
+        "amount": 120,
+        "date": "2026-06-18T22:43:52.954Z"
+      },
+      {
+        "type": "Withdraw",
+        "amount": 100,
+        "date": "2026-06-18T22:44:14.335Z"
+      },
+      {
+        "type": "Withdraw",
+        "amount": 50,
+        "date": "2026-06-18T22:44:23.344Z"
+      }
+    ],
+    "phoneNumber": "07075938646",
+    "status": "Active",
+    "createdAt": "2026-06-18T17:14:47.487Z"
+  },
+  {
+    "id": "ID-1780962386456-228",
+    "accountNumber": "1652087392",
+    "accountPin": "$2b$10$rzcNhm/V2IqLe0GvFk68FeT60YuYOXzDz8TJ.bkvFB8G3qrsenEPO",
+    "accountType": "Current",
+    "balance": 0,
+    "email": "elemide.j.dev@gmail.com",
+    "failedAttempt": 0,
+    "history": [],
+    "phoneNumber": "07025908646",
+    "status": "Active",
+    "createdAt": "2026-06-18T17:24:10.821Z"
+  }
+]
