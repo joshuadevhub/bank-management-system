@@ -44,7 +44,7 @@ This project is built in progressive versions to simulate real software developm
 
 ---
 
-# 🔐 Version 2.0.0 (In Progress)
+# 🔐 Version 2.0.0 (Completed) - 2026-06-21
 
 ## 🔑 Security Features
 - PIN authentication for withdrawals & transfers
@@ -67,7 +67,7 @@ This project is built in progressive versions to simulate real software developm
 
 ---
 
-# 🚀 Version 3.0.0 (Planned)
+# 🚀 Version 3.0.0 (In Progress)
 
 ## 🎯 Goal
 Upgrade system into a backend-level banking simulation with real-world architecture.

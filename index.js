@@ -46,7 +46,6 @@
  * - feat: SavingsAccount and CurrentAccount support
  */
 
-
 // Node Modules
 const path = require("path");
 const fsPromises = require("fs").promises;
@@ -232,6 +231,7 @@ class AccountManager {
         (account) => account.id === existingUser.id,
       ).history;
       const depositLog = {
+        transactionId: `txn_${getTodayDate()}_${getTodayTransactionLog(this.email, this.phoneNumber)}`,
         type: "Deposit",
         amount: money,
         date: new Date().toISOString(),
@@ -261,12 +261,12 @@ class AccountManager {
 
       const existingUser = findUser(this.email, this.phoneNumber);
       if (!existingUser)
-        return console.log("User account does not exist in our DB");
+        throw new Error("User account does not exist in our DB");
       const existingAccount = findAccountById(this.email, this.phoneNumber);
       if (!existingAccount)
-        return console.log("Invalid Account. Please Create an account!");
+        throw new Error("Invalid Account. Please Create an account!");
       if (existingAccount.status !== "Active")
-        return console.log(
+        throw new Error(
           `We are unable to process withdrawals because your account is ${existingAccount.status}`,
         );
       const accountPin = String(pin);
@@ -320,12 +320,11 @@ class AccountManager {
 
       let balance = existingAccount.balance;
       const withdrawalAmount = Number(amount);
-      if (isNaN(withdrawalAmount))
-        return console.log("Invalid Amount Withdrawal");
+      if (isNaN(withdrawalAmount)) throw new Error("Invalid Amount Withdrawal");
       if (withdrawalAmount <= 0)
-        return console.log("Withdrawal amount must be greater than $0");
+        throw new Error("Withdrawal amount must be greater than $0");
       if (withdrawalAmount > balance)
-        return console.log("Insufficient Fund. Please Deposit in your account");
+        throw new Error("Insufficient Fund. Please Deposit in your account");
 
       const today = new Date().toISOString().split("T")[0];
 
@@ -352,6 +351,7 @@ class AccountManager {
         (account) => account.id === existingUser.id,
       ).history;
       const withdrawalLog = {
+        transactionId: `txn_${getTodayDate()}_${getTodayTransactionLog(this.email, this.phoneNumber)}`,
         type: "Withdraw",
         amount: withdrawalAmount,
         date: new Date().toISOString(),
@@ -371,55 +371,121 @@ class AccountManager {
   }
 
   checkBalance() {
-    const existingUser = findUser(this.email, this.phoneNumber);
-    if (!existingUser)
-      return console.log("Invalid User. Please create your user profile");
-    const existingAccount = findAccountById(this.email, this.phoneNumber);
-    if (!existingAccount)
-      return console.log("Invalid account. Please create an account");
-    const balance = existingAccount.balance;
-    console.log(`Your current balance is $${balance}`);
-  }
-
-  async transfer(amount, acctNumber) {
     try {
-      // Check if sender exist
       const existingUser = findUser(this.email, this.phoneNumber);
       if (!existingUser)
-        return console.log("Invalid User. Please create your user profile");
+        throw new Error("We couldn't find a user matching those details");
       const existingAccount = findAccountById(this.email, this.phoneNumber);
       if (!existingAccount)
-        return console.log("Invalid account. Please create an account");
-      if (existingAccount.status !== "Active")
-        return console.log(
-          `We are unable to process transfers because your account have been ${existingAccount.status}`,
-        );
-      let senderBalance = existingAccount.balance;
+        throw new Error("Invalid account. Please create an account");
+      const balance = existingAccount.balance;
+      console.log(`Your current balance is $${balance}`);
+    } catch (err) {
+      console.log(err.message)
+    }
+  }
+
+  async transfer(amount, acctNumber, pin) {
+    try {
+      if (amount === undefined || amount === null || amount === "")
+        throw new Error("Transfer amount is required");
       const money = Number(amount);
-      if (isNaN(money) || money <= 0)
-        return console.log("Invalid amount to be transfer");
-      if (money > senderBalance)
-        return console.log("Insufficient fund. Please fund your account");
+      if (isNaN(money))
+        throw new Error("Invalid amount. Please enter a valid number");
+      if (money <= 0)
+        throw new Error("Please enter an amount greater then $0.00");
+
+      if (acctNumber === undefined || acctNumber === null || acctNumber === "")
+        throw new Error("Account number is required");
       const accountNumber = Number(acctNumber);
       if (
         isNaN(accountNumber) ||
         String(accountNumber).length < 10 ||
         String(accountNumber).length > 10
       )
-        return console.log("Invalid account number");
+        throw new Error("Invalid account number");
+
+      const existingUser = findUser(this.email, this.phoneNumber);
+      if (!existingUser)
+        throw new Error("Invalid User. Please create your user profile");
+      const existingAccount = findAccountById(this.email, this.phoneNumber);
+      if (!existingAccount)
+        throw new Error("Invalid account. Please create an account");
+      if (existingAccount.status !== "Active")
+        throw new Error(
+          `We are unable to process transfers because your account is ${existingAccount.status}`,
+        );
+
       const recipientAccount = accountDB.accounts.find(
         (account) => account.accountNumber === String(accountNumber),
       );
       if (!recipientAccount)
-        return console.log("Account Number does not exist in our DB");
+        throw new Error("Account Number does not exist in our DB");
       if (
         String(existingAccount.accountNumber) === recipientAccount.accountNumber
       )
-        return console.log("You cannot transfer money into your own account");
+        throw new Error("You cannot transfer money into your own account");
+
+      let senderBalance = existingAccount.balance;
+      if (money > senderBalance)
+        throw new Error("Insufficient fund. Please fund your account");
+
       if (recipientAccount.status !== "Active")
         return console.log(
           `Transfer failed. The recipient account is ${recipientAccount.status}`,
         );
+
+      if (pin === undefined || pin === null || pin === "")
+        throw new Error("Your account PIN is required");
+      const accountPin = String(pin);
+      if (!pinRegex.test(accountPin))
+        throw new Error("PIN must be exactly 4 digits");
+      const comparePin = await bcrypt.compare(
+        accountPin,
+        existingAccount.accountPin,
+      );
+      if (!comparePin) {
+        const failedAttempt = (existingAccount.failedAttempt || 0) + 1;
+        const remainingAttempt = 3 - failedAttempt;
+        const updatedAccount = accountDB.accounts.map((account) =>
+          account.id === existingUser.id
+            ? { ...account, failedAttempt }
+            : account,
+        );
+        accountDB.setAccounts(updatedAccount);
+        await fsPromises.writeFile(
+          path.join(__dirname, "model", "usersAccounts.json"),
+          JSON.stringify(accountDB.accounts, null, 2),
+        );
+        if (failedAttempt >= 3) {
+          const updatedAccount = accountDB.accounts.map((account) =>
+            account.id === existingUser.id
+              ? { ...account, status: "Locked" }
+              : account,
+          );
+          accountDB.setAccounts(updatedAccount);
+          await fsPromises.writeFile(
+            path.join(__dirname, "model", "usersAccounts.json"),
+            JSON.stringify(accountDB.accounts, null, 2),
+          );
+          throw new Error("Account Locked due to 3 failed attempt");
+        }
+        throw new Error(
+          `Invalid PIN. ${remainingAttempt} attempt(s) remaining`,
+        );
+      }
+
+      const newObj = accountDB.accounts.map((account) =>
+        account.id === existingUser.id
+          ? { ...account, failedAttempt: 0 }
+          : account,
+      );
+      accountDB.setAccounts(newObj);
+      await fsPromises.writeFile(
+        path.join(__dirname, "model", "usersAccounts.json"),
+        JSON.stringify(accountDB.accounts, null, 2),
+      );
+
       senderBalance = senderBalance - money;
       const receiverBalance = recipientAccount.balance + money;
       const senderUpdatedAccount = updateAccount(
@@ -431,6 +497,7 @@ class AccountManager {
         (account) => account.id === existingUser.id,
       ).history;
       const senderDebitLog = {
+        transactionId: `txn_${getTodayDate()}_${getTodayTransactionLog(this.email, this.phoneNumber)}`,
         type: "Debit",
         amount: money,
         date: new Date().toISOString(),
@@ -439,9 +506,9 @@ class AccountManager {
       accountDB.setAccounts(senderUpdatedAccount);
       console.log(`Transferred Successful. You transferred $${money}.`);
 
-      // Recipient code to receive the money transferred;
       const recipientAccountHistory = recipientAccount.history;
       const recipientCreditLog = {
+        transactionId: `txn_${getTodayDate()}_${getTodayTransactionLog(this.email, this.phoneNumber)}`,
         type: "Credit",
         amount: money,
         date: new Date().toISOString(),
@@ -544,7 +611,21 @@ function updateAccount(email, phone, newBalance) {
 }
 
 function getTodayDate() {
-  const today = new Date();
+  const year = new Date().getFullYear();
+  const month = new Date().getMonth();
+  const formattedMonth = String(month).padStart(2, "0");
+  const date = new Date().getDate();
+  const formattedDate = String(date).padStart(2, "0");
+  return `${year}${formattedMonth}${formattedDate}`;
+}
+
+function getTodayTransactionLog(email, phone) {
+  const today = new Date().toISOString().split("T")[0];
+  const existingAccount = findAccountById(email, phone).history;
+  const todayHistoryLog =
+    existingAccount.filter((account) => account.date.split("T")[0] === today)
+      .length + 1;
+  return String(todayHistoryLog).padStart(3, "0");
 }
 
 // Variables
@@ -591,7 +672,7 @@ const excel = new User(
 const excelAccount = new AccountManager("yinkaseke@gmail.com", "09178675342");
 // Execute code
 async function run() {
-  await bolaAccount.withdraw("50", 1258);
+  await joshuaAccount.checkBalance();
 }
 
 run();
