@@ -193,11 +193,7 @@ class AccountManager {
         createdAt: new Date().toISOString(),
       };
       accountDB.setAccounts([...accountDB.accounts, newAccount]);
-      await fsPromises.writeFile(
-        path.join(__dirname, "model", "usersAccounts.json"),
-        JSON.stringify(accountDB.accounts, null, 2),
-      );
-
+      await saveToFile();
       console.log(
         `Your Account have been successfully created. Thank you for choosing our bank ${existingUser.firstName} ${existingUser.lastName}`,
       );
@@ -230,19 +226,11 @@ class AccountManager {
       const accountHistory = updatedAccount.find(
         (account) => account.id === existingUser.id,
       ).history;
-      const depositLog = {
-        transactionId: `txn_${getTodayDate()}_${getTodayTransactionLog(this.email, this.phoneNumber)}`,
-        type: "Deposit",
-        amount: money,
-        date: new Date().toISOString(),
-      };
-      accountHistory.push(depositLog);
-      accountDB.setAccounts(updatedAccount);
-
-      await fsPromises.writeFile(
-        path.join(__dirname, "model", "usersAccounts.json"),
-        JSON.stringify(accountDB.accounts, null, 2),
+      accountHistory.push(
+        createTransaction(this.email, this.phoneNumber, "Deposit", money),
       );
+      accountDB.setAccounts(updatedAccount);
+      await saveToFile();
       console.log(
         `Transaction Successful. You deposited $${money} into your account`,
       );
@@ -270,53 +258,7 @@ class AccountManager {
           `We are unable to process withdrawals because your account is ${existingAccount.status}`,
         );
       const accountPin = String(pin);
-      if (!pinRegex.test(accountPin))
-        throw new Error("PIN must be exactly 4 digits");
-      const comparePin = await bcrypt.compare(
-        accountPin,
-        existingAccount.accountPin,
-      );
-      if (!comparePin) {
-        const failedAttempt = existingAccount.failedAttempt + 1;
-        const remainingAttempt = 3 - failedAttempt;
-        const updatedAccount = accountDB.accounts.map((account) =>
-          account.id === existingUser.id
-            ? { ...account, failedAttempt }
-            : account,
-        );
-        accountDB.setAccounts(updatedAccount);
-        await fsPromises.writeFile(
-          path.join(__dirname, "model", "usersAccounts.json"),
-          JSON.stringify(accountDB.accounts, null, 2),
-        );
-        if (failedAttempt >= 3) {
-          const updatedAccount = accountDB.accounts.map((account) =>
-            account.id === existingUser.id
-              ? { ...account, status: "Locked" }
-              : account,
-          );
-          accountDB.setAccounts(updatedAccount);
-          await fsPromises.writeFile(
-            path.join(__dirname, "model", "usersAccounts.json"),
-            JSON.stringify(accountDB.accounts, null, 2),
-          );
-          throw new Error("Account Locked due to 3 failed PIN attempts");
-        }
-        throw new Error(
-          `Invalid PIN. ${remainingAttempt} attempt(s) remaining`,
-        );
-      }
-
-      const newObj = accountDB.accounts.map((account) =>
-        account.id === existingUser.id
-          ? { ...account, failedAttempt: 0 }
-          : account,
-      );
-      accountDB.setAccounts(newObj);
-      await fsPromises.writeFile(
-        path.join(__dirname, "model", "usersAccounts.json"),
-        JSON.stringify(accountDB.accounts, null, 2),
-      );
+      await this.verifyPin(existingUser, existingAccount, accountPin);
 
       let balance = existingAccount.balance;
       const withdrawalAmount = Number(amount);
@@ -350,18 +292,16 @@ class AccountManager {
       const accountHistory = updatedAccount.find(
         (account) => account.id === existingUser.id,
       ).history;
-      const withdrawalLog = {
-        transactionId: `txn_${getTodayDate()}_${getTodayTransactionLog(this.email, this.phoneNumber)}`,
-        type: "Withdraw",
-        amount: withdrawalAmount,
-        date: new Date().toISOString(),
-      };
-      accountHistory.push(withdrawalLog);
-      accountDB.setAccounts(updatedAccount);
-      await fsPromises.writeFile(
-        path.join(__dirname, "model", "usersAccounts.json"),
-        JSON.stringify(accountDB.accounts, null, 2),
+      accountHistory.push(
+        createTransaction(
+          this.email,
+          this.phoneNumber,
+          "Withdraw",
+          withdrawalAmount,
+        ),
       );
+      accountDB.setAccounts(updatedAccount);
+      await saveToFile();
       console.log(
         `Transaction Successful. You withdraw $${withdrawalAmount} from your account`,
       );
@@ -381,7 +321,7 @@ class AccountManager {
       const balance = existingAccount.balance;
       console.log(`Your current balance is $${balance}`);
     } catch (err) {
-      console.log(err.message)
+      console.log(err.message);
     }
   }
 
@@ -438,53 +378,7 @@ class AccountManager {
       if (pin === undefined || pin === null || pin === "")
         throw new Error("Your account PIN is required");
       const accountPin = String(pin);
-      if (!pinRegex.test(accountPin))
-        throw new Error("PIN must be exactly 4 digits");
-      const comparePin = await bcrypt.compare(
-        accountPin,
-        existingAccount.accountPin,
-      );
-      if (!comparePin) {
-        const failedAttempt = (existingAccount.failedAttempt || 0) + 1;
-        const remainingAttempt = 3 - failedAttempt;
-        const updatedAccount = accountDB.accounts.map((account) =>
-          account.id === existingUser.id
-            ? { ...account, failedAttempt }
-            : account,
-        );
-        accountDB.setAccounts(updatedAccount);
-        await fsPromises.writeFile(
-          path.join(__dirname, "model", "usersAccounts.json"),
-          JSON.stringify(accountDB.accounts, null, 2),
-        );
-        if (failedAttempt >= 3) {
-          const updatedAccount = accountDB.accounts.map((account) =>
-            account.id === existingUser.id
-              ? { ...account, status: "Locked" }
-              : account,
-          );
-          accountDB.setAccounts(updatedAccount);
-          await fsPromises.writeFile(
-            path.join(__dirname, "model", "usersAccounts.json"),
-            JSON.stringify(accountDB.accounts, null, 2),
-          );
-          throw new Error("Account Locked due to 3 failed attempt");
-        }
-        throw new Error(
-          `Invalid PIN. ${remainingAttempt} attempt(s) remaining`,
-        );
-      }
-
-      const newObj = accountDB.accounts.map((account) =>
-        account.id === existingUser.id
-          ? { ...account, failedAttempt: 0 }
-          : account,
-      );
-      accountDB.setAccounts(newObj);
-      await fsPromises.writeFile(
-        path.join(__dirname, "model", "usersAccounts.json"),
-        JSON.stringify(accountDB.accounts, null, 2),
-      );
+      await this.verifyPin(existingUser, existingAccount, accountPin);
 
       senderBalance = senderBalance - money;
       const receiverBalance = recipientAccount.balance + money;
@@ -496,34 +390,23 @@ class AccountManager {
       const senderAccountHistory = senderUpdatedAccount.find(
         (account) => account.id === existingUser.id,
       ).history;
-      const senderDebitLog = {
-        transactionId: `txn_${getTodayDate()}_${getTodayTransactionLog(this.email, this.phoneNumber)}`,
-        type: "Debit",
-        amount: money,
-        date: new Date().toISOString(),
-      };
-      senderAccountHistory.push(senderDebitLog);
+      senderAccountHistory.push(
+        createTransaction(this.email, this.phoneNumber, "Debit", money),
+      );
       accountDB.setAccounts(senderUpdatedAccount);
       console.log(`Transferred Successful. You transferred $${money}.`);
 
       const recipientAccountHistory = recipientAccount.history;
-      const recipientCreditLog = {
-        transactionId: `txn_${getTodayDate()}_${getTodayTransactionLog(this.email, this.phoneNumber)}`,
-        type: "Credit",
-        amount: money,
-        date: new Date().toISOString(),
-      };
-      recipientAccountHistory.push(recipientCreditLog);
+      recipientAccountHistory.push(
+        createTransaction(this.email, this.phoneNumber, "Credit", money),
+      );
       const recipientUpdatedAccount = accountDB.accounts.map((account) =>
         account.accountNumber === String(accountNumber)
           ? { ...account, balance: receiverBalance }
           : account,
       );
       accountDB.setAccounts(recipientUpdatedAccount);
-      await fsPromises.writeFile(
-        path.join(__dirname, "model", "usersAccounts.json"),
-        JSON.stringify(accountDB.accounts, null, 2),
-      );
+      await saveToFile();
       console.log(`Successful. You received $${money}.`);
     } catch (err) {
       console.log(err.message);
@@ -561,14 +444,50 @@ class AccountManager {
           : account,
       );
       accountDB.setAccounts(deactivatedAccount);
-      await fsPromises.writeFile(
-        path.join(__dirname, "model", "usersAccounts.json"),
-        JSON.stringify(accountDB.accounts, null, 2),
-      );
+      await saveToFile();
       console.log("Your account has been deactivated successfully");
     } catch (err) {
       console.log(err.message);
     }
+  }
+
+  async verifyPin(existingUser, existingAccount, accountPin) {
+    if (!pinRegex.test(accountPin))
+      throw new Error("PIN must be exactly 4 digits");
+    const comparePin = await bcrypt.compare(
+      accountPin,
+      existingAccount.accountPin,
+    );
+    if (!comparePin) {
+      const failedAttempt = existingAccount.failedAttempt + 1;
+      const remainingAttempt = 3 - failedAttempt;
+      const updatedAccount = accountDB.accounts.map((account) =>
+        account.id === existingUser.id
+          ? { ...account, failedAttempt }
+          : account,
+      );
+      accountDB.setAccounts(updatedAccount);
+      await saveToFile();
+      if (failedAttempt >= 3) {
+        const updatedAccount = accountDB.accounts.map((account) =>
+          account.id === existingUser.id
+            ? { ...account, status: "Locked" }
+            : account,
+        );
+        accountDB.setAccounts(updatedAccount);
+        await saveToFile();
+        throw new Error("Account Locked due to 3 failed PIN attempts");
+      }
+      throw new Error(`Invalid PIN. ${remainingAttempt} attempt(s) remaining`);
+    }
+
+    const newObj = accountDB.accounts.map((account) =>
+      account.id === existingUser.id
+        ? { ...account, failedAttempt: 0 }
+        : account,
+    );
+    accountDB.setAccounts(newObj);
+    await saveToFile();
   }
 }
 
@@ -591,7 +510,7 @@ function findUser(email, phone) {
 
 function findAccountById(email, phone) {
   const existingUser = findUser(email, phone);
-
+  if (!existingUser) return null;
   const account = accountDB.accounts.find(
     (account) => account.id === existingUser.id,
   );
@@ -612,7 +531,7 @@ function updateAccount(email, phone, newBalance) {
 
 function getTodayDate() {
   const year = new Date().getFullYear();
-  const month = new Date().getMonth();
+  const month = new Date().getMonth() + 1;
   const formattedMonth = String(month).padStart(2, "0");
   const date = new Date().getDate();
   const formattedDate = String(date).padStart(2, "0");
@@ -626,6 +545,22 @@ function getTodayTransactionLog(email, phone) {
     existingAccount.filter((account) => account.date.split("T")[0] === today)
       .length + 1;
   return String(todayHistoryLog).padStart(3, "0");
+}
+
+function createTransaction(email, phoneNumber, type, money) {
+  return {
+    transactionId: `txn_${getTodayDate()}_${getTodayTransactionLog(email, phoneNumber)}`,
+    type,
+    amount: money,
+    date: new Date().toISOString(),
+  };
+}
+
+async function saveToFile() {
+  await fsPromises.writeFile(
+    path.join(__dirname, "model", "usersAccounts.json"),
+    JSON.stringify(accountDB.accounts, null, 2),
+  );
 }
 
 // Variables
@@ -672,7 +607,7 @@ const excel = new User(
 const excelAccount = new AccountManager("yinkaseke@gmail.com", "09178675342");
 // Execute code
 async function run() {
-  await joshuaAccount.checkBalance();
+  // await joshuaAccount.deposit(100);
 }
 
 run();

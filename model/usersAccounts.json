@@ -4,7 +4,7 @@
     "accountNumber": "8435164079",
     "accountPin": "$2b$10$sYHuL.BseG.sXviOZAx3rOD7hHlo4VxbTGd8wSob4FCoZM5doS9gG",
     "accountType": "Savings",
-    "balance": 4000,
+    "balance": 4015,
     "email": "jelemidea@byupathway.edu",
     "failedAttempt": 0,
     "history": [
@@ -19,6 +19,36 @@
         "type": "Withdraw",
         "amount": 500,
         "date": "2026-06-19T21:45:28.323Z"
+      },
+      {
+        "transactionId": "txn_20260625_001",
+        "type": "Withdraw",
+        "amount": 50,
+        "date": "2026-06-24T23:36:48.630Z"
+      },
+      {
+        "transactionId": "txn_20260625_002",
+        "type": "Withdraw",
+        "amount": 55,
+        "date": "2026-06-24T23:37:23.835Z"
+      },
+      {
+        "transactionId": "txn_20260625_003",
+        "type": "Debit",
+        "amount": 100,
+        "date": "2026-06-24T23:39:14.186Z"
+      },
+      {
+        "transactionId": "txn_20260625_004",
+        "type": "Deposit",
+        "amount": 110,
+        "date": "2026-06-24T23:49:34.973Z"
+      },
+      {
+        "transactionId": "txn_20260625_005",
+        "type": "Deposit",
+        "amount": 110,
+        "date": "2026-06-24T23:49:54.480Z"
       }
     ],
     "phoneNumber": "07075938646",
@@ -30,7 +60,7 @@
     "accountNumber": "1652087392",
     "accountPin": "$2b$10$rzcNhm/V2IqLe0GvFk68FeT60YuYOXzDz8TJ.bkvFB8G3qrsenEPO",
     "accountType": "Current",
-    "balance": 8400,
+    "balance": 8600,
     "email": "elemide.j.dev@gmail.com",
     "failedAttempt": 0,
     "history": [
@@ -51,6 +81,18 @@
         "type": "Withdraw",
         "amount": 5100,
         "date": "2026-06-19T21:48:10.016Z"
+      },
+      {
+        "transactionId": "txn_20260625_004",
+        "type": "Credit",
+        "amount": 100,
+        "date": "2026-06-24T23:39:14.192Z"
+      },
+      {
+        "transactionId": "txn_20260625_001",
+        "type": "Deposit",
+        "amount": 100,
+        "date": "2026-06-25T00:07:15.608Z"
       }
     ],
     "phoneNumber": "07025908646",
