@@ -2,9 +2,9 @@
   {
     "id": "ID-1781084824183-507",
     "accountNumber": "8435164079",
-    "accountPin": "$2b$10$sYHuL.BseG.sXviOZAx3rOD7hHlo4VxbTGd8wSob4FCoZM5doS9gG",
+    "accountPin": "$2b$10$hGEXYyYC9BjAvDvantJ3b..Vd5RPNoefgXUnEVCxVwuXcRuW8g5km",
     "accountType": "Savings",
-    "balance": 4015,
+    "balance": 2757,
     "email": "jelemidea@byupathway.edu",
     "failedAttempt": 0,
     "history": [
@@ -49,6 +49,12 @@
         "type": "Deposit",
         "amount": 110,
         "date": "2026-06-24T23:49:54.480Z"
+      },
+      {
+        "transactionId": "txn_20260627_001",
+        "type": "Withdraw",
+        "amount": 1258,
+        "date": "2026-06-27T12:25:45.397Z"
       }
     ],
     "phoneNumber": "07075938646",
