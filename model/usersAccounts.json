@@ -66,7 +66,7 @@
     "accountNumber": "1652087392",
     "accountPin": "$2b$10$UhNc/5FF38ZRUBy4WukaK.yHKTfGLTp0BI2AQls/mA95tOdp1fUcu",
     "accountType": "Current",
-    "balance": 8600,
+    "balance": 8435,
     "email": "elemide.j.dev@gmail.com",
     "failedAttempt": 0,
     "history": [
@@ -99,6 +99,12 @@
         "type": "Deposit",
         "amount": 100,
         "date": "2026-06-25T00:07:15.608Z"
+      },
+      {
+        "transactionId": "txn_20260628_001",
+        "type": "Withdraw",
+        "amount": 165,
+        "date": "2026-06-28T22:33:51.431Z"
       }
     ],
     "phoneNumber": "07025908646",

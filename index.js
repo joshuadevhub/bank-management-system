@@ -697,7 +697,7 @@ const excel = new User(
 const excelAccount = new AccountManager("yinkaseke@gmail.com", "09178675342");
 // Execute code
 async function run() {
-  await joshuaAccount.resetPin(1652087392, "1259");
+  await joshuaAccount.withdraw(165, "1259");
 }
 
 run();
