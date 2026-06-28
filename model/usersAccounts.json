@@ -58,13 +58,13 @@
       }
     ],
     "phoneNumber": "07075938646",
-    "status": "Active",
+    "status": "Deactivated",
     "createdAt": "2026-06-18T17:14:47.487Z"
   },
   {
     "id": "ID-1780962386456-228",
     "accountNumber": "1652087392",
-    "accountPin": "$2b$10$rzcNhm/V2IqLe0GvFk68FeT60YuYOXzDz8TJ.bkvFB8G3qrsenEPO",
+    "accountPin": "$2b$10$UhNc/5FF38ZRUBy4WukaK.yHKTfGLTp0BI2AQls/mA95tOdp1fUcu",
     "accountType": "Current",
     "balance": 8600,
     "email": "elemide.j.dev@gmail.com",

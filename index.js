@@ -67,6 +67,7 @@ const accountDB = {
 };
 
 const pinRegex = /^\d{4}$/;
+const accountNumberRegex = /^\d{10}$/;
 
 // Classes
 class User {
@@ -497,24 +498,85 @@ class AccountManager {
         throw new Error("We couldn't find a user matching those details");
       const existingAccount = findAccountById(this.email, this.phoneNumber);
       if (!existingAccount) throw new Error("This account does not exist!");
-      
-      if (oldPin === undefined || oldPin === null || oldPin === "") throw new Error("Please input your old PIN");
+
+      if (oldPin === undefined || oldPin === null || oldPin === "")
+        throw new Error("Please input your old PIN");
       const oldAccountPin = String(oldPin);
-      if (!pinRegex.test(oldAccountPin)) throw new Error("PIN must be exactly 4 digits");
-      const isOldPinCorrect = await bcrypt.compare(oldAccountPin, existingAccount.accountPin);
+      if (!pinRegex.test(oldAccountPin))
+        throw new Error("PIN must be exactly 4 digits");
+      const isOldPinCorrect = await bcrypt.compare(
+        oldAccountPin,
+        existingAccount.accountPin,
+      );
       if (!isOldPinCorrect) throw new Error("Incorrect old PIN");
-      
-      if (newPin === undefined || newPin === null || newPin === "") throw new Error("Please input your new PIN");
+
+      if (newPin === undefined || newPin === null || newPin === "")
+        throw new Error("Please input your new PIN");
       const newAccountPin = String(newPin);
-      if (!pinRegex.test(newAccountPin)) throw new Error("New PIN must be exactly 4 digits");
-      if (oldAccountPin === newAccountPin) throw new Error("New PIN cannot be the same as your old PIN");
+      if (!pinRegex.test(newAccountPin))
+        throw new Error("New PIN must be exactly 4 digits");
+      if (oldAccountPin === newAccountPin)
+        throw new Error("New PIN cannot be the same as your old PIN");
       const hashedNewPin = await bcrypt.hash(newAccountPin, 10);
-      const updatedAccount = accountDB.accounts.map(account => account.id === existingUser.id ? { ...account, accountPin: hashedNewPin } : account);
+      const updatedAccount = accountDB.accounts.map((account) =>
+        account.id === existingUser.id
+          ? { ...account, accountPin: hashedNewPin }
+          : account,
+      );
       accountDB.setAccounts(updatedAccount);
       await saveToFile();
       console.log("Your PIN has been changed successfully");
     } catch (err) {
-      console.log(err.message)
+      console.log(err.message);
+    }
+  }
+
+  async resetPin(acctNumber, pin) {
+    try {
+      const existingUser = findUser(this.email, this.phoneNumber);
+      if (!existingUser)
+        throw new Error("We couldn't find a user matching those details");
+      const existingAccount = findAccountById(this.email, this.phoneNumber);
+      if (!existingAccount) throw new Error("This account does not exist");
+
+      if (acctNumber === undefined || acctNumber === null || acctNumber === "")
+        throw new Error("Please input your account number");
+      const accountNumber = String(acctNumber);
+
+      if (!accountNumberRegex.test(accountNumber))
+        throw new Error("Account number must be 10-digits only.");
+
+      if (existingAccount.accountNumber !== accountNumber)
+        throw new Error("Account number does not match our records");
+
+      if (pin === undefined || pin === null || pin === "")
+        throw new Error("Please enter a new PIN");
+
+      const newAccountPin = String(pin);
+
+      if (!pinRegex.test(newAccountPin))
+        throw new Error("Account PIN must be 4-digits only");
+
+      const isSamePin = await bcrypt.compare(
+        newAccountPin,
+        existingAccount.accountPin,
+      );
+
+      if (isSamePin)
+        throw new Error("New PIN cannot be the same as your current PIN");
+
+      const hashedPin = await bcrypt.hash(newAccountPin, 10);
+
+      const updatedAccounts = accountDB.accounts.map((account) =>
+        account.id === existingAccount.id
+          ? { ...account, accountPin: hashedPin }
+          : account,
+      );
+      accountDB.setAccounts(updatedAccounts);
+      await saveToFile();
+      console.log("Your account PIN has been reset successfully.");
+    } catch (err) {
+      console.log(err.message);
     }
   }
 }
@@ -635,7 +697,7 @@ const excel = new User(
 const excelAccount = new AccountManager("yinkaseke@gmail.com", "09178675342");
 // Execute code
 async function run() {
-  await bolaAccount.withdraw(1258, "1244");
+  await joshuaAccount.resetPin(1652087392, "1259");
 }
 
 run();
